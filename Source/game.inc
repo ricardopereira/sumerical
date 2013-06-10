@@ -141,6 +141,7 @@ startGame proc
 	mov cl,timeRow
 	add cl,2
 	setCursor timeCol,cl
+	call loadRandomGameValue
 	printNum gameValue
 	
 	;Coloca acumulado
@@ -389,6 +390,14 @@ doWin:
 	setCursor timeCol,cl
 	printWord gamePoints
 	setCursor activeCol,activeRow
+	
+	;Gera novo valor total a atingir
+	mov cl,timeRow
+	add cl,2
+	setCursor timeCol,cl
+	call loadRandomGameValue
+	printNum gameValue
+	setCursor activeCol,activeRow
 
 doRefreshValorAcumulado:
 	;Coloca o valor acumulado
@@ -541,21 +550,22 @@ doFinish:
 	ret
 showSavedGames endp
 
-showConfig proc
-	call cleanScreen
-	lea dx,screenConfig
-	call readScreen
-	
+showCurrentConfig proc
 	mov activeCol,25h
 	mov activeRow,9h
 	setCursor activeCol,activeRow
     ;Tempo
 	printNum maxSeconds
 	
-    ;Valor a atingir
+    ;Valor maximo a atingir
 	inc activeRow
 	setCursor activeCol,activeRow
-	printNum gameValue
+	printNum maxGameValue
+	
+    ;Tamanho do tabuleiro
+	inc activeRow
+	setCursor activeCol,activeRow
+	printNum tabGameSize
 	
     ;Celula multi-color
 	inc activeRow
@@ -595,6 +605,48 @@ flagStopTimerFalse:
 	printC ' '
 flagStopTimer:
 	printC ']'
+	ret
+showCurrentConfig endp
+
+loadOriginalGame proc
+	call cleanScreen
+	lea dx,screenReinit
+	call readScreen
+	
+	;Repor valores por defeito
+	;ToDo - Defautls
+	mov cellMultiColor,0
+	mov canSaveGame,1
+	mov canStopTimer,1
+	
+	mov al,maxSecondsDefault
+	mov maxSeconds,al
+	
+	mov al,maxGameValueDefault
+	mov maxGameValue,al
+	
+	mov al,tabGameSizeDefault
+	mov tabGameSize,al
+	
+	call showCurrentConfig
+doKeyboard:
+	call waitKeyboard
+	
+	cmp keyPressed,1Bh ;ESC
+	je doFinish
+	
+	jmp doKeyboard
+doFinish:
+    setCursor 0,0
+	ret
+loadOriginalGame endp
+
+showConfig proc
+	call cleanScreen
+	lea dx,screenConfig
+	call readScreen
+	
+	call showCurrentConfig
 	
 	inc activeCol
 	setCursor activeCol,activeRow
@@ -642,9 +694,21 @@ doMoveDown:
 doMoveRight:
 	cmp cellIdx,1
 	je doIncOption1
+	cmp cellIdx,2
+	je doIncOption2
+	cmp cellIdx,3
+	je doIncOption3
+	cmp cellIdx,4
+	je doIncOption4
+	cmp cellIdx,5
+	je doIncOption5
+	cmp cellIdx,6
+	je doIncOption6
 	jmp doKeyboard
 doIncOption1:
     ;Tempo
+	cmp maxSeconds,59d
+	je doKeyboard
 	inc maxSeconds
 	dec activeCol
 	setCursor activeCol,activeRow
@@ -652,13 +716,74 @@ doIncOption1:
 	inc activeCol
 	setCursor activeCol,activeRow
 	jmp doKeyboard
+doIncOption2:
+    ;Valor max. a atingir
+	cmp maxGameValue,36d
+	je doKeyboard
+	inc maxGameValue
+	dec activeCol
+	setCursor activeCol,activeRow
+	printNum maxGameValue
+	inc activeCol
+	setCursor activeCol,activeRow
+	jmp doKeyboard
+doIncOption3:
+    ;Tamanho do tabuleiro
+	cmp tabGameSize,10d
+	je doKeyboard
+	inc tabGameSize
+	dec activeCol
+	setCursor activeCol,activeRow
+	printNum tabGameSize
+	inc activeCol
+	setCursor activeCol,activeRow
+	jmp doKeyboard
+doIncOption4:
+    ;Celula multi-color
+	cmp cellMultiColor,1
+	je doKeyboard
+	inc cellMultiColor
+	setCursor activeCol,activeRow
+	printC 'X'
+	setCursor activeCol,activeRow
+	jmp doKeyboard
+doIncOption5:
+    ;Gravar jogo
+	cmp canSaveGame,1
+	je doKeyboard
+	inc canSaveGame
+	setCursor activeCol,activeRow
+	printC 'X'
+	setCursor activeCol,activeRow
+	jmp doKeyboard
+doIncOption6:
+    ;Ativar tecla 'p' (pausar tempo)
+	cmp canStopTimer,1
+	je doKeyboard
+	inc canStopTimer
+	setCursor activeCol,activeRow
+	printC 'X'
+	setCursor activeCol,activeRow
+	jmp doKeyboard
 
 doMoveLeft:
 	cmp cellIdx,1
 	je doDecOption1
+	cmp cellIdx,2
+	je doDecOption2
+	cmp cellIdx,3
+	je doDecOption3
+	cmp cellIdx,4
+	je doDecOption4
+	cmp cellIdx,5
+	je doDecOption5
+	cmp cellIdx,6
+	je doDecOption6
 	jmp doKeyboard
 doDecOption1:
     ;Tempo
+	cmp maxSeconds,9
+	je doKeyboard
 	dec maxSeconds
 	dec activeCol
 	setCursor activeCol,activeRow
@@ -666,8 +791,79 @@ doDecOption1:
 	inc activeCol
 	setCursor activeCol,activeRow
 	jmp doKeyboard
+doDecOption2:
+    ;Valor max. a atingir
+	cmp maxGameValue,9
+	je doKeyboard
+	dec maxGameValue
+	dec activeCol
+	setCursor activeCol,activeRow
+	printNum maxGameValue
+	inc activeCol
+	setCursor activeCol,activeRow
+	jmp doKeyboard
+doDecOption3:
+    ;Tamanho do tabuleiro
+	cmp tabGameSize,1
+	je doKeyboard
+	dec tabGameSize
+	dec activeCol
+	setCursor activeCol,activeRow
+	printNum tabGameSize
+	inc activeCol
+	setCursor activeCol,activeRow
+	jmp doKeyboard
+doDecOption4:
+    ;Celula multi-color
+	cmp cellMultiColor,0
+	je doKeyboard
+	dec cellMultiColor
+	setCursor activeCol,activeRow
+	printC ' '
+	setCursor activeCol,activeRow
+	jmp doKeyboard
+doDecOption5:
+    ;Gravar jogo
+	cmp canSaveGame,0
+	je doKeyboard
+	dec canSaveGame
+	setCursor activeCol,activeRow
+	printC ' '
+	setCursor activeCol,activeRow
+	jmp doKeyboard
+doDecOption6:
+    ;Ativar tecla 'p' (pausar tempo)
+	cmp canStopTimer,0
+	je doKeyboard
+	dec canStopTimer
+	setCursor activeCol,activeRow
+	printC ' '
+	setCursor activeCol,activeRow
+	jmp doKeyboard
 
 doFinish:
     setCursor 0,0
 	ret
 showConfig endp
+
+randomGame proc
+	xor ax,ax
+	xor bx,bx
+	mov al,tabGameSize
+	mov bl,tabGameSize
+	mul bl
+	mov tabGameTotalSize,al
+	xor si,si
+	xor ax,ax
+	mov al,tabGameTotalSize
+doNewRandomValue:
+	cmp si,ax
+	je doFinish
+	call loadRandomNum
+	mov dl,randomNum
+	mov tabGame[si],dl
+	inc si
+	jmp doNewRandomValue
+doFinish:
+	ret
+randomGame endp

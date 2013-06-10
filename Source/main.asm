@@ -11,7 +11,7 @@ dseg segment para public 'data'
 	activeRow byte 0
 	keyPressed byte 0
 	par byte 0
-	randomNum word 0
+	randomNum byte 0
 	numInStr db "  $"
 	string byte 6 dup(?)
 	Count word 0
@@ -31,24 +31,27 @@ dseg segment para public 'data'
 	;Constantes
 	tabGameSizeDefault byte 10d
 	maxSecondsDefault byte 20d
+	maxGameValueDefault byte 36d ;(quatro numeros de 9)
 	
-	;Extras/Opcoes
-	cellMultiColor byte 1
+	;Extras/Configuracoes
+	cellMultiColor byte 0
 	canSaveGame byte 1
 	canStopTimer byte 1
-	maxSeconds byte 15d
-	gameValue byte 36d ;Default (4 numero de 9)
-	numOptions byte 5
+	maxSeconds byte 20d
+	maxGameValue byte 36d
+	tabGameSize byte 10d ;Tamanho do Tabuleiro
+	
+	numOptions byte 6
 	
 	;Tabuleiro
 	tabGame byte 100d dup(0) ;Números de cada célula
 	tabGameLast word 0 ;Última célula
-	tabGameSize byte 0 ;Tamanho do Tabuleiro
 	tabGameTotalSize byte 0 ;Número total de celulas
 	cellIdx byte 0
 	isGameOver byte 0
 	gameTotalValue word 0 ;Total dos números das células
 	gamePoints word 0 ;Pontuacao
+	gameValue byte 0 ;Valor a atingir em jogo
 	selectedCells byte 100d dup(0)
 	selectedCellCount byte 0
 	selectedCellIndexes byte 100d dup(0)
@@ -82,6 +85,7 @@ dseg segment para public 'data'
 	screenGame byte 'game.int',0
 	screenLoadGame byte 'loadgame.int',0
 	screenConfig byte 'config.int',0
+	screenReinit byte 'reinit.int',0
 	
 	;Mensagens
 	msgJogoGravado db "Gravado $"
@@ -154,6 +158,9 @@ doMenu:
 	
 	cmp keyPressed,'4' ;Carregar jogo
 	je doCarregarJogo
+	
+	cmp keyPressed,'5' ;Carregar jogo
+	je doCarregarJogoDinamico
 
 	cmp keyPressed,'0' ;SAIR
 	je doFinish
@@ -175,7 +182,8 @@ doJogo:
 	jmp doInit
 	
 doReiniciarJogo:
-	jmp doMenu
+	call loadOriginalGame
+	jmp doInit
 	
 doPrepararJogo:
 	call showConfig
@@ -187,6 +195,15 @@ doCarregarJogo:
 	je doInit
 	jmp doJogo
 	
+doCarregarJogoDinamico:
+	call cleanScreen
+	lea dx,screenGame
+	call readScreen
+	;Carregar jogo
+	call randomGame
+	call startGame
+	jmp doInit
+
 doFinish:
 	ret
 menu endp
